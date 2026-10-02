@@ -93,6 +93,12 @@ def get_manifest(plugin_name, version):
         data = urllib.request.urlopen(req, timeout=30).read()
         z = zipfile.ZipFile(io.BytesIO(data))
         manifest = z.read("META-INF/MANIFEST.MF").decode("utf-8")
+        # MANIFEST.MF uses CRLF line endings. Normalizing to \n up front
+        # avoids leaving a stray \r glued onto whatever token follows a
+        # line-wrap boundary (e.g. "plain-credentials\r:199..."), which
+        # otherwise breaks dependency name lookups and reports plugins
+        # that are actually installed as missing.
+        manifest = manifest.replace("\r\n", "\n").replace("\r", "\n")
 
         lines = manifest.split("\n")
         full_lines = []
